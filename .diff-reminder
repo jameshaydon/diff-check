@@ -1,0 +1,6 @@
+--- # Diff Reminders
+- id: g
+  reminders:
+  - type: modified
+    reason: When f changes you need to update g because blabla.
+    target: f

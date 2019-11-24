@@ -1,0 +1,6 @@
+resolver: lts-14.15
+
+packages:
+- .
+extra-deps:
+- diff-parse-0.2.1@sha256:f1dcccfd6434983539c88f07d6fb971ebc3e03f02893ac3ad649a60745ca1fc4,1419
