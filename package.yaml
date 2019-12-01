@@ -22,8 +22,12 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - base >= 4.7 && < 5
 - protolude
+- text
 - process
+- cryptonite
+- memory
 - diff-parse
+- bytestring
 
 library:
   source-dirs: src
