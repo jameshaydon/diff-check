@@ -5,11 +5,19 @@ import Protolude
 
 -- | A function to do stuff.
 --
--- REMIND: Whenever 'f' (this function) changes it is important to update 'g'
--- also.
--- REMCHECK 2019-12-01: James Henri Haydon stamped this (vWZ5Z4Tk).
+-- CHECK: 'f' is still compatible with 'g'
+-- Whenever 'f' (this function) changes it is important to update 'g' also.
+-- This is another description line.
+-- STAMP: James Henri Haydon CHECKED 'f' is still compatible with 'g' (vWZ5Z4Tk)
 f :: Int -> Int -> Int
-f x y = (3 * x) + y
+f x y =
+  (4 * x)
+    + (2 * y)
+    + (3 * x)
+    + (4 * y)
+    + (5 * x)
+    + (6 * y)
+    + (7 * x)
 
 -- start: g
 

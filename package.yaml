@@ -28,6 +28,11 @@ dependencies:
 - memory
 - diff-parse
 - bytestring
+- parser-combinators
+- megaparsec
+- prettyprinter
+- prettyprinter-ansi-terminal
+- ansi-terminal
 
 library:
   source-dirs: src
@@ -86,3 +91,5 @@ default-extensions:
 - TupleSections
 - TypeApplications
 - TypeOperators
+- ViewPatterns
+- TypeFamilies

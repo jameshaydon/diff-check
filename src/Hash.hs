@@ -10,7 +10,7 @@ import qualified Data.Text.IO as TIO
 import Protolude hiding (hash)
 import System.IO (hFlush, stdout)
 
-hashSha256 :: Text -> Text
-hashSha256 chunk =
+sha256_8 :: Text -> Text
+sha256_8 chunk =
   let digest :: ByteString = convertToBase Base64 (hashWith SHA256 (encodeUtf8 chunk))
    in T.take 8 (toS digest)
