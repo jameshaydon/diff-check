@@ -1,11 +1,10 @@
-module Lib where
+module Lib (exe) where
 
 import Control.Monad.Combinators
-import Control.Monad.Fail
 import qualified Data.Text as T
 import Hash
 import Out
-import Protolude hiding (check, many, some, sourceLine, try)
+import Protolude hiding (check, hash, many, some, sourceLine, try)
 import System.Process (readProcess)
 import Text.Diff.Parse (parseDiff)
 import Text.Diff.Parse.Types
@@ -15,18 +14,17 @@ import Types
 
 type Parser = Parsec Void Text
 
-checksP :: Parser [Check]
-checksP =
+checksP :: Text -> Parser [Check]
+checksP un =
   catMaybes
-    <$> many (Just <$> checkP <|> Nothing <$ nonCheckLine)
+    <$> many (Just <$> checkP un <|> Nothing <$ nonCheckLine)
   where
-    nonCheckLine = do
-      _ <- takeWhileP (Just "non-check line char") nonNewline
-      (newline >> pure () <|> eof)
+    nonCheckLine = takeWhileP (Just "non-check line char") nonNewline >> newline >> pure () <|> eof
 
 nonNewline :: Char -> Bool
 nonNewline = (/= '\n')
 
+nonNewlineP :: Parser Char
 nonNewlineP = anySingleBut '\n'
 
 -- Parses a newline-terminated line of text.
@@ -34,18 +32,18 @@ lineP :: Parser Text
 lineP = takeWhileP (Just "non-newline char") nonNewline <* newline
 
 -- | Parses a check.
-checkP :: Parser Check
-checkP = do
+checkP :: Text -> Parser Check
+checkP username = do
   -- If it can't pass a prefix then it backtracks. But if it can, then it
   -- commits to parsing a CHECK.
   prfx <- try (prefix <?> "prefix")
   space
   short <- takeWhileP (Just "short description") nonNewline <?> "title"
-  newline
+  _ <- newline
   long <- longP prfx <?> "description"
-  stamp <- optional (stampP prfx <?> "STAMP")
+  oldStamp <- optional (stampP prfx <?> "STAMP")
   region <- regionP <?> "region"
-  pure Check {..}
+  pure Check {newStamp = Stamp {hash = regionHash region, ..}, ..}
 
 -- | Parses a prefix before a check.
 prefix :: Parser Text
@@ -60,10 +58,10 @@ longP prfx = many (nonStampPrefix *> lineP)
 
 stampP :: Text -> Parser Stamp
 stampP prfx = do
-  chunk (prfx <> "STAMP: ")
+  _ <- chunk (prfx <> "STAMP: ")
   username <- toS <$> manyTill (nonNewlineP <?> "username char") (chunk " CHECKED ")
   (short, hash) <- first toS <$> manyTill_ (nonNewlineP <?> "short description") (hashP <?> "hash")
-  newline
+  _ <- newline
   pure Stamp {..}
   where
     hashP = between (chunk " (") (char ')') (takeP (Just "hash") 8)
@@ -76,31 +74,22 @@ regionP = do
   pure Region
     { range = (unPos (sourceLine start), unPos (sourceLine end) - 1),
       content = ls,
-      hash = sha256_8 (T.concat ls)
+      regionHash = hashContent ls
     }
   where
     nonEmptyLineP = T.cons <$> nonNewlineP <*> lineP
 
-say :: Text -> IO ()
-say = putStrLn
+hashContent :: [Text] -> Text
+hashContent = sha256_8 . T.intercalate "\n"
 
 -- | Run @git diff ARGS@ in the current working directory.
 gitDiff :: [Text] -> IO Text
 gitDiff args = toS <$> readProcess "git" ("diff" : (toS <$> args)) ""
 
-line :: Line -> IO ()
-line Line {..} = do
-  putStrLn $ T.cons ann lineContent
-  where
-    ann = case lineAnnotation of
-      Added -> '+'
-      Removed -> '-'
-
-hunk :: Hunk -> IO ()
-hunk Hunk {..} = do
-  print hunkSourceRange
-  print hunkDestRange
-  forM_ hunkLines line
+gitUsername :: IO Text
+gitUsername = do
+  un <- toS <$> readProcess "git" ["config", "user.name"] ""
+  pure (T.strip un)
 
 spanMaybe :: (a -> Maybe b) -> [a] -> ([b], [a])
 spanMaybe f (x : xs) | Just y <- f x = (y : ys, xs')
@@ -111,12 +100,18 @@ spanMaybe _ xs = ([], xs)
 clashes :: [Check] -> [Hunk] -> [(Check, [((Int, Int), Hunk)])]
 clashes [] _ = []
 clashes _ [] = []
-clashes (c : cs) hs = if not (null is) then (c, is) : next else next
+clashes (c : cs) hs = if include then (c, is) : next else next
   where
-    next = clashes cs hs
+    next = clashes cs rest
+    include = not (validStamp c || null is)
     (is, rest) = spanMaybe intersect (dropWhile before hs)
     before h = snd (hunkRange h) < fst (checkRange c)
     intersect h = (,h) <$> intervalIntersect (hunkRange h) (checkRange c)
+
+validStamp :: Check -> Bool
+validStamp Check {region = Region {regionHash = h}, oldStamp} = case oldStamp of
+  Just Stamp {hash = h'} | h == h' -> True
+  _ -> False
 
 checkRange :: Check -> (Int, Int)
 checkRange Check {..} = range region
@@ -134,26 +129,31 @@ intervalIntersect (a, b) (a', b') =
     x = max a a'
     y = min b b'
 
-delta :: FileDelta -> IO ()
-delta FileDelta {..} = case fileDeltaContent of
+delta :: Text -> FileDelta -> IO ()
+delta name FileDelta {..} = case fileDeltaContent of
   Hunks hs -> do
     let fp = toS fileDeltaDestFile
     t <- readFile fp
-    case parse checksP fp t of
+    case parse (checksP name) fp t of
       Left err -> putStr (errorBundlePretty err)
       Right cs -> do
         let xs = clashes cs hs
         outAnsi
           ( Reminders
               { source = fp,
-                reminders = (uncurry Reminder) <$> xs
+                reminders = uncurry Reminder <$> xs
               }
           )
+  _ -> pure ()
 
 exe :: IO ()
 exe = do
+  name <- gitUsername
   gd <- gitDiff ["origin/master", "--unified=0", "--minimal"]
-  let d = parseDiff gd
-  case d of
-    Right ds -> forM_ ds delta
-    Left e -> putStrLn e
+  if T.null gd
+    then pure ()
+    else
+      let d = parseDiff gd
+       in case d of
+            Right ds -> forM_ ds (delta name)
+            Left e -> putStrLn e

@@ -7,7 +7,7 @@ data Region
   = Region
       { range :: (Int, Int),
         content :: [Text],
-        hash :: Text
+        regionHash :: Text
       }
   deriving (Show)
 
@@ -23,7 +23,8 @@ data Check
   = Check
       { short :: Text,
         long :: [Text],
-        stamp :: Maybe Stamp,
+        oldStamp :: Maybe Stamp,
+        newStamp :: Stamp,
         region :: Region
       }
   deriving (Show)

@@ -5,10 +5,7 @@ import Data.ByteArray.Encoding (Base (Base64), convertToBase)
 import Data.ByteString (ByteString)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
-import Data.Text.Encoding (encodeUtf8)
-import qualified Data.Text.IO as TIO
 import Protolude hiding (hash)
-import System.IO (hFlush, stdout)
 
 sha256_8 :: Text -> Text
 sha256_8 chunk =

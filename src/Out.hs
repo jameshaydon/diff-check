@@ -3,7 +3,7 @@ module Out where
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal as Term
 import Data.Text.Prettyprint.Doc.Render.Text as Text
-import Protolude
+import Protolude hiding (check, hash)
 import qualified System.Console.ANSI as Term
 import Text.Diff.Parse.Types
 import Types
@@ -11,22 +11,30 @@ import Types
 class Out a where
   out :: a -> Doc AnsiStyle
 
+instance Out Stamp where
+  out Stamp {..} =
+    annotate italicized $
+      "STAMP" <> ":" <+> pretty username <+> "CHECKED" <+> pretty short <+> parens (pretty hash)
+
 instance Out Check where
   out Check {..} =
     vsep
-      [ annotate underlined "CHECK" <> ":" <+> pretty short,
+      [ annotate (color Cyan <> underlined) "CHECK" <> ":" <+> pretty short,
         mempty,
         indent 2 $ annotate italicized (vsep (pretty <$> long))
       ]
 
 instance Out Line where
   out Line {..} = case lineAnnotation of
-    Added -> annotate (color Green) $ "+" <> (pretty lineContent)
-    Removed -> annotate (color Red) $ "-" <> (pretty lineContent)
+    Added -> annotate (color Green) $ "+" <> pretty lineContent
+    Removed -> annotate (color Red) $ "-" <> pretty lineContent
     Context -> " " <> pretty lineContent
 
 instance Out Hunk where
-  out Hunk {..} = indent 2 (vsep (out <$> hunkLines) <> hardline)
+  out Hunk {..} =
+    indent 2 (vsep diffs) <> hardline
+    where
+      diffs = "L" <> pretty (rangeStartingLineNumber hunkDestRange) : (out <$> hunkLines)
 
 instance Out Reminder where
   out Reminder {..} =
@@ -35,7 +43,9 @@ instance Out Reminder where
         mempty,
         "The region of this check is affected by the following hunks:",
         mempty,
-        vsep (out . snd <$> hunks)
+        vsep (out . snd <$> hunks),
+        "To mark this as checked, use the stamp:",
+        out (newStamp check)
       ]
 
 instance Out Reminders where
