@@ -1,0 +1,104 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 89171b037fcdb58064da8678dbe09ff0ad9a5f85ccd28fa04d26e5173230fa84
+
+name:           diff-check
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/diff-reminder#readme>
+homepage:       https://github.com/jameshaydon/diff-check#readme
+bug-reports:    https://github.com/jameshaydon/diff-check/issues
+author:         James Henri Haydon
+maintainer:     james.haydon@gmail.com
+copyright:      2019 James Henri Haydon
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/jameshaydon/diff-check
+
+library
+  exposed-modules:
+      Hash
+      Lib
+      Out
+      Types
+  other-modules:
+      Paths_diff_check
+  hs-source-dirs:
+      src
+  default-extensions: ConstraintKinds DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving StrictData TupleSections TypeApplications TypeOperators ViewPatterns TypeFamilies
+  build-depends:
+      ansi-terminal
+    , base >=4.7 && <5
+    , bytestring
+    , cryptonite
+    , diff-parse
+    , megaparsec
+    , memory
+    , parser-combinators
+    , prettyprinter
+    , prettyprinter-ansi-terminal
+    , process
+    , protolude
+    , text
+  default-language: Haskell2010
+
+executable diffcheck
+  main-is: Main.hs
+  other-modules:
+      Paths_diff_check
+  hs-source-dirs:
+      app
+  default-extensions: ConstraintKinds DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving StrictData TupleSections TypeApplications TypeOperators ViewPatterns TypeFamilies
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      ansi-terminal
+    , base >=4.7 && <5
+    , bytestring
+    , cryptonite
+    , diff-check
+    , diff-parse
+    , megaparsec
+    , memory
+    , parser-combinators
+    , prettyprinter
+    , prettyprinter-ansi-terminal
+    , process
+    , protolude
+    , text
+  default-language: Haskell2010
+
+test-suite diff-reminder-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_diff_check
+  hs-source-dirs:
+      test
+  default-extensions: ConstraintKinds DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving StrictData TupleSections TypeApplications TypeOperators ViewPatterns TypeFamilies
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      ansi-terminal
+    , base >=4.7 && <5
+    , bytestring
+    , cryptonite
+    , diff-parse
+    , diff-reminder
+    , megaparsec
+    , memory
+    , parser-combinators
+    , prettyprinter
+    , prettyprinter-ansi-terminal
+    , process
+    , protolude
+    , text
+  default-language: Haskell2010

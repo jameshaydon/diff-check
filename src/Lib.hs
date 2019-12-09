@@ -97,7 +97,7 @@ spanMaybe f (x : xs) | Just y <- f x = (y : ys, xs')
     (ys, xs') = spanMaybe f xs
 spanMaybe _ xs = ([], xs)
 
-clashes :: [Check] -> [Hunk] -> [(Check, [((Int, Int), Hunk)])]
+clashes :: [Check] -> [Hunk] -> [(Check, [Hunk])]
 clashes [] _ = []
 clashes _ [] = []
 clashes (c : cs) hs = if include then (c, is) : next else next
@@ -106,7 +106,9 @@ clashes (c : cs) hs = if include then (c, is) : next else next
     include = not (validStamp c || null is)
     (is, rest) = spanMaybe intersect (dropWhile before hs)
     before h = snd (hunkRange h) < fst (checkRange c)
-    intersect h = (,h) <$> intervalIntersect (hunkRange h) (checkRange c)
+    intersect h = h <$ intervalIntersect (hunkRange h) (checkRange c)
+
+-- (,h) <$> intervalIntersect (hunkRange h) (checkRange c)
 
 validStamp :: Check -> Bool
 validStamp Check {region = Region {regionHash = h}, oldStamp} = case oldStamp of
@@ -129,22 +131,17 @@ intervalIntersect (a, b) (a', b') =
     x = max a a'
     y = min b b'
 
-delta :: Text -> FileDelta -> IO ()
+delta :: Text -> FileDelta -> IO (Either Text [Reminder])
 delta name FileDelta {..} = case fileDeltaContent of
   Hunks hs -> do
     let fp = toS fileDeltaDestFile
     t <- readFile fp
     case parse (checksP name) fp t of
-      Left err -> putStr (errorBundlePretty err)
+      Left err -> pure . Left . toS . errorBundlePretty $ err
       Right cs -> do
         let xs = clashes cs hs
-        outAnsi
-          ( Reminders
-              { source = fp,
-                reminders = uncurry Reminder <$> xs
-              }
-          )
-  _ -> pure ()
+        pure . Right $ (uncurry (Reminder fp)) <$> xs
+  _ -> pure . Right $ []
 
 exe :: IO ()
 exe = do
@@ -155,5 +152,10 @@ exe = do
     else
       let d = parseDiff gd
        in case d of
-            Right ds -> forM_ ds (delta name)
+            Right ds -> do
+              rs_ <- sequence <$> traverse (delta name) ds
+              case rs_ of
+                Left err -> putStrLn err >> exitFailure
+                Right (concat -> []) -> exitSuccess
+                Right (concat -> rs) -> outAnsi rs >> exitFailure
             Left e -> putStrLn e

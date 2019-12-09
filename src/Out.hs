@@ -17,12 +17,11 @@ instance Out Stamp where
       "STAMP" <> ":" <+> pretty username <+> "CHECKED" <+> pretty short <+> parens (pretty hash)
 
 instance Out Check where
-  out Check {..} =
-    vsep
-      [ annotate (color Cyan <> underlined) "CHECK" <> ":" <+> pretty short,
-        mempty,
-        indent 2 $ annotate italicized (vsep (pretty <$> long))
-      ]
+  out Check {..} = vsep $ annotate (color Blue <> underlined) "CHECK" <> ":" <+> annotate bold (pretty short) : desc
+    where
+      desc = case long of
+        [] -> []
+        _ -> [mempty, indent 2 $ annotate italicized (vsep (pretty <$> long))]
 
 instance Out Line where
   out Line {..} = case lineAnnotation of
@@ -38,25 +37,22 @@ instance Out Hunk where
 
 instance Out Reminder where
   out Reminder {..} =
-    vsep
-      [ out check,
-        mempty,
-        "The region of this check is affected by the following hunks:",
-        mempty,
-        vsep (out . snd <$> hunks),
-        "To mark this as checked, use the stamp:",
-        out (newStamp check)
-      ]
-
-instance Out Reminders where
-  out Reminders {..} = case reminders of
-    [] -> mempty
-    _ ->
-      vsep
-        [ annotate bold (pretty source) <> ":" <+> pretty (length reminders) <+> "reminders:",
+    hardline
+      <> vsep
+        [ pretty source,
+          out check,
           mempty,
-          vsep (out <$> reminders)
+          "The region of this check is affected by the following hunks:",
+          mempty,
+          vsep (out <$> hunks),
+          "To mark this as checked, use the stamp:",
+          out (newStamp check)
         ]
+
+instance Out [Reminder] where
+  out = \case
+    [] -> mempty
+    rs -> vsep (out <$> rs)
 
 outAnsi :: Out a => a -> IO ()
 outAnsi x = do

@@ -31,12 +31,7 @@ data Check
 
 data Reminder
   = Reminder
-      { check :: Check,
-        hunks :: [((Int, Int), Hunk)]
-      }
-
-data Reminders
-  = Reminders
       { source :: FilePath,
-        reminders :: [Reminder]
+        check :: Check,
+        hunks :: [Hunk]
       }

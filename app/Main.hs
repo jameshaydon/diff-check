@@ -12,20 +12,19 @@ import Protolude
 f :: Int -> Int -> Int
 f x y =
   (4 * x)
+    + (1 * y)
+    + (2 * x)
     + (2 * y)
-    + (3 * x)
-    + (4 * y)
-    + (5 * x)
-    + (6 * y)
-    + (7 * x)
-
--- start: g
+    + (4 * x)
+    + (5 * y)
+    + (6 * x)
 
 -- | A function to do stuff.
+-- CHECK: should check this.
 g :: Int -> Int
-g x = f x x
-
--- end: g
+g x =
+  f x x
+    + f (f x x) x
 
 main :: IO ()
 main = exe
