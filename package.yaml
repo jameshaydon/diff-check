@@ -33,6 +33,7 @@ dependencies:
 - prettyprinter
 - prettyprinter-ansi-terminal
 - ansi-terminal
+- optparse-applicative
 
 library:
   source-dirs: src

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 89171b037fcdb58064da8678dbe09ff0ad9a5f85ccd28fa04d26e5173230fa84
+-- hash: 8b77e422908f98e4918514cc86eb61a5b746774f34c12a9b968fcbb0d1b0e7ba
 
 name:           diff-check
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Config
       Hash
       Lib
       Out
@@ -44,6 +45,7 @@ library
     , diff-parse
     , megaparsec
     , memory
+    , optparse-applicative
     , parser-combinators
     , prettyprinter
     , prettyprinter-ansi-terminal
@@ -69,6 +71,7 @@ executable diffcheck
     , diff-parse
     , megaparsec
     , memory
+    , optparse-applicative
     , parser-combinators
     , prettyprinter
     , prettyprinter-ansi-terminal
@@ -95,6 +98,7 @@ test-suite diff-reminder-test
     , diff-reminder
     , megaparsec
     , memory
+    , optparse-applicative
     , parser-combinators
     , prettyprinter
     , prettyprinter-ansi-terminal
