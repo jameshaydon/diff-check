@@ -37,5 +37,5 @@ config =
     <*> switch
       ( long "interactive"
           <> short 'i'
-          <> help "Use in interactive mode"
+          <> help "Use the interactive mode"
       )

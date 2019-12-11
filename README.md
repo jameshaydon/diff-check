@@ -47,8 +47,12 @@ To mark this as checked, use the stamp:
 STAMP: James Henri Haydon CHECKED short description (MovKghFl)
 ```
 
-To mark the check as done update the stamp. (Future versions will allow updating
-the stamp interactively).
+To mark the check as done the stamp must be updated. This can be done by using
+the interactive mode:
+
+```
+diffcheck -i
+```
 
 To perform the check against a branch other than master, use:
 
