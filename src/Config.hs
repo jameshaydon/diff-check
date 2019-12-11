@@ -8,7 +8,8 @@ data Config
   = Config
       { diffAgainst :: Text,
         checkMarker :: Text,
-        stampMarker :: Text
+        stampMarker :: Text,
+        interactive :: Bool
       }
 
 config :: Parser Config
@@ -32,4 +33,9 @@ config =
           <> help "Marker to use for detecting STAMPs"
           <> showDefault
           <> value "STAMP:"
+      )
+    <*> switch
+      ( long "interactive"
+          <> short 'i'
+          <> help "Use in interactive mode"
       )

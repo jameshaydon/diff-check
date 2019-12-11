@@ -46,7 +46,7 @@ instance Out Reminder where
           mempty,
           vsep (out <$> hunks),
           "To mark this as checked, use the stamp:",
-          out (newStamp check)
+          out (newStamp check) <> hardline
         ]
 
 instance Out [Reminder] where

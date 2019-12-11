@@ -6,12 +6,14 @@ import qualified Data.Text as T
 import Hash
 import Out
 import Protolude hiding (check, hash, many, some, sourceLine, try)
+import qualified System.IO as IO
 import System.Process (readProcess)
 import Text.Diff.Parse (parseDiff)
 import Text.Diff.Parse.Types
 import Text.Megaparsec hiding (region)
 import Text.Megaparsec.Char
 import Types
+import Prelude (getChar)
 
 type Parser = Parsec Void Text
 
@@ -145,12 +147,26 @@ delta checkMark stampMark name FileDelta {..} = case fileDeltaContent of
         pure . Right $ (uncurry (Reminder fp)) <$> xs
   _ -> pure . Right $ []
 
+say :: Text -> IO ()
+say = putStrLn
+
+iMode :: Reminder -> IO ()
+iMode r = do
+  outAnsi r
+  say "\nMark as checked? This will add the stamp above. [y/n]"
+  cmd <- getChar
+  case cmd of
+    'y' -> say "\n\nCheck has been stamped."
+    'n' -> pure ()
+    _ -> say "unrecognised"
+
 -- CAREFUL: just for testing
 -- This is a line:
 --   - This is an item;
 --   - This is another.
 exe :: Config -> IO ()
-exe Config {..} = do
+exe c@Config {..} = do
+  IO.hSetBuffering stdin IO.NoBuffering
   name <- gitUsername
   gd <- gitDiff [diffAgainst, "--unified=0", "--minimal"]
   if T.null gd
@@ -163,5 +179,8 @@ exe Config {..} = do
               case rs_ of
                 Left err -> putStrLn err >> exitFailure
                 Right (concat -> []) -> exitSuccess
-                Right (concat -> rs) -> outAnsi rs >> exitFailure
+                Right (concat -> rs) ->
+                  if interactive
+                    then traverse_ iMode rs
+                    else outAnsi rs >> exitFailure
             Left e -> putStrLn e >> exitFailure
