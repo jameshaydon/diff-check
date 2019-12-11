@@ -34,6 +34,8 @@ dependencies:
 - prettyprinter-ansi-terminal
 - ansi-terminal
 - optparse-applicative
+- directory
+- time
 
 library:
   source-dirs: src

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8b77e422908f98e4918514cc86eb61a5b746774f34c12a9b968fcbb0d1b0e7ba
+-- hash: faba3de70d2b3f83a5e3ef21fd7f99d42e96ec08035409c29cd2a5e582c0165c
 
 name:           diff-check
 version:        0.1.0.0
@@ -43,6 +43,7 @@ library
     , bytestring
     , cryptonite
     , diff-parse
+    , directory
     , megaparsec
     , memory
     , optparse-applicative
@@ -52,6 +53,7 @@ library
     , process
     , protolude
     , text
+    , time
   default-language: Haskell2010
 
 executable diffcheck
@@ -69,6 +71,7 @@ executable diffcheck
     , cryptonite
     , diff-check
     , diff-parse
+    , directory
     , megaparsec
     , memory
     , optparse-applicative
@@ -78,6 +81,7 @@ executable diffcheck
     , process
     , protolude
     , text
+    , time
   default-language: Haskell2010
 
 test-suite diff-reminder-test
@@ -96,6 +100,7 @@ test-suite diff-reminder-test
     , cryptonite
     , diff-parse
     , diff-reminder
+    , directory
     , megaparsec
     , memory
     , optparse-applicative
@@ -105,4 +110,5 @@ test-suite diff-reminder-test
     , process
     , protolude
     , text
+    , time
   default-language: Haskell2010

@@ -6,6 +6,7 @@ import qualified Data.Text as T
 import Hash
 import Out
 import Protolude hiding (check, hash, many, some, sourceLine, try)
+import System.Directory
 import qualified System.IO as IO
 import System.Process (readProcess)
 import Text.Diff.Parse (parseDiff)
@@ -39,25 +40,27 @@ checkP :: Text -> Text -> Text -> Parser Check
 checkP checkMark stampMark username = do
   -- If it can't pass a prefix then it backtracks. But if it can, then it
   -- commits to parsing a CHECK.
-  prfx <- try (prefix checkMark <?> "prefix")
+  prefix <- try (prefixP checkMark <?> "prefix")
   space
   short <- takeWhileP (Just "short description") nonNewline <?> "title"
   _ <- newline
-  long <- longP prfx <?> "description"
-  oldStamp <- optional (stampP stampMark prfx <?> "STAMP")
+  long <- longP stampMark prefix <?> "description"
+  stampStart <- getOffset
+  oldStamp <- optional (stampP stampMark prefix <?> "STAMP")
+  stampEnd <- getOffset
   region <- regionP <?> "region"
   pure Check {newStamp = Stamp {hash = regionHash region, ..}, ..}
 
 -- | Parses a prefix before a check.
-prefix :: Text -> Parser Text
-prefix checkMark = toS <$> manyTill (nonNewlineP <?> "comment prefix") (chunk checkMark)
+prefixP :: Text -> Parser Text
+prefixP checkMark = toS <$> manyTill (nonNewlineP <?> "comment prefix") (chunk checkMark)
 
 -- | The long description is all lines that start with the prefix and are before
 -- an optional stamp.
-longP :: Text -> Parser [Text]
-longP prfx = many (nonStampPrefix *> lineP)
+longP :: Text -> Text -> Parser [Text]
+longP stampMark prfx = many (nonStampPrefix *> lineP)
   where
-    nonStampPrefix = try (chunk prfx <* notFollowedBy (chunk "STAMP:"))
+    nonStampPrefix = try (chunk prfx <* notFollowedBy (chunk stampMark))
 
 stampP :: Text -> Text -> Parser Stamp
 stampP stampMark prfx = do
@@ -139,34 +142,53 @@ delta :: Text -> Text -> Text -> FileDelta -> IO (Either Text [Reminder])
 delta checkMark stampMark name FileDelta {..} = case fileDeltaContent of
   Hunks hs -> do
     let fp = toS fileDeltaDestFile
+    modTime <- getModificationTime fp
     t <- readFile fp
     case parse (checksP checkMark stampMark name) fp t of
       Left err -> pure . Left . toS . errorBundlePretty $ err
       Right cs -> do
         let xs = clashes cs hs
-        pure . Right $ (uncurry (Reminder fp)) <$> xs
+        pure . Right $ uncurry (Reminder fp modTime) <$> xs
   _ -> pure . Right $ []
 
 say :: Text -> IO ()
 say = putStrLn
 
-iMode :: Reminder -> IO ()
-iMode r = do
+formatStamp :: Text -> Text -> Stamp -> Text
+formatStamp stampMark prfx Stamp {..} =
+  prfx <> stampMark <> " " <> username <> " CHECKED " <> short <> " (" <> hash <> ")"
+
+iMode :: Text -> Reminder -> IO ()
+iMode stampMark r@Reminder {..} = do
   outAnsi r
   say "\nMark as checked? This will add the stamp above. [y/n]"
+  IO.hSetBuffering stdin IO.NoBuffering
   cmd <- getChar
   case cmd of
-    'y' -> say "\n\nCheck has been stamped."
-    'n' -> pure ()
-    _ -> say "unrecognised"
+    'y' -> do
+      IO.hSetBuffering stdin IO.LineBuffering
+      let Check {..} = check
+      t <- readFile source
+      let (beforeStamp, oldPlusRest) = T.splitAt stampStart t
+          rest = T.drop (stampEnd - stampStart) oldPlusRest
+          t' = beforeStamp <> formatStamp stampMark prefix newStamp <> "\n" <> rest
+      modTime' <- getModificationTime source
+      if modTime == modTime'
+        then do
+          writeFile source t'
+          say "\nWrote stamp."
+        else say "\nFile was modified, aborting."
+    'n' -> IO.hSetBuffering stdin IO.LineBuffering >> say "\nDid nothing."
+    _ -> IO.hSetBuffering stdin IO.LineBuffering >> say "\nUnrecognised command."
 
 -- CAREFUL: just for testing
 -- This is a line:
 --   - This is an item;
 --   - This is another.
+-- CHECKPOINT: James Henri Haydon CHECKED just for testing (zVmSlHeN)
 exe :: Config -> IO ()
-exe c@Config {..} = do
-  IO.hSetBuffering stdin IO.NoBuffering
+exe Config {..} = do
+  say "diffcheck: looking for unstamped checks.."
   name <- gitUsername
   gd <- gitDiff [diffAgainst, "--unified=0", "--minimal"]
   if T.null gd
@@ -178,9 +200,11 @@ exe c@Config {..} = do
               rs_ <- sequence <$> traverse (delta checkMarker stampMarker name) ds
               case rs_ of
                 Left err -> putStrLn err >> exitFailure
-                Right (concat -> []) -> exitSuccess
+                Right (concat -> []) -> do
+                  say "All clear."
+                  exitSuccess
                 Right (concat -> rs) ->
                   if interactive
-                    then traverse_ iMode rs
+                    then traverse_ (iMode stampMarker) rs
                     else outAnsi rs >> exitFailure
             Left e -> putStrLn e >> exitFailure
