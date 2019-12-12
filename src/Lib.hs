@@ -188,7 +188,7 @@ iMode stampMark r@Reminder {..} = do
 -- CHECKPOINT: James Henri Haydon CHECKED just for testing (zVmSlHeN)
 exe :: Config -> IO ()
 exe Config {..} = do
-  say "diffcheck: looking for unstamped checks.."
+  say "diffcheck: looking for unstamped checks..."
   name <- gitUsername
   gd <- gitDiff [diffAgainst, "--unified=0", "--minimal"]
   if T.null gd

@@ -83,7 +83,8 @@ non-configurable.
   enfoce something with a test that is the way to go. However sometimes you can
   forget to update the tests! For example you might want to test that each field
   of an API type is independently patchable. If you add a field to the type,
-  what will remind you to add a new test?
+  what will remind you to add a new test? Some things are also not checkable by
+  code, e.g. checking things with other teams, non-coders, etc.
 
 ## TODO
 

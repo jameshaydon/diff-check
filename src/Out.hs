@@ -11,17 +11,25 @@ import Types
 class Out a where
   out :: a -> Doc AnsiStyle
 
-instance Out Stamp where
-  out Stamp {..} =
-    annotate italicized $
-      "STAMP" <> ":" <+> pretty username <+> "CHECKED" <+> pretty short <+> parens (pretty hash)
+-- instance Out Stamp where
+--   out Stamp {..} =
+--     annotate italicized $
+--       "STAMP" <> ":" <+> pretty username <+> "CHECKED" <+> pretty short <+> parens (pretty hash)
 
 instance Out Check where
-  out Check {..} = vsep $ annotate (color Blue <> underlined) "CHECK" <> ":" <+> annotate bold (pretty short) : desc
+  out Check {..} =
+    vsep $ [ch <+> tit] <> desc
     where
+      ch = annotate (color Blue <> underlined) "CHECK" <> ":"
+      tit = annotate bold (pretty short) <+> parens hashChange
+      hashChange = oldHash <> " → " <> newHash
+      newHash = annotate (color Green) (pretty (regionHash region))
+      oldHash = case oldStamp of
+        Nothing -> mempty
+        Just Stamp {..} -> annotate (color Red) (pretty hash)
       desc = case long of
         [] -> []
-        _ -> [mempty, indent 2 $ annotate italicized (vsep (pretty <$> long))]
+        _ -> [indent 2 $ annotate italicized (vsep (pretty <$> long))]
 
 instance Out Line where
   out Line {..} = case lineAnnotation of
@@ -44,9 +52,7 @@ instance Out Reminder where
           mempty,
           "The region of this check is affected by the following hunks:",
           mempty,
-          vsep (out <$> hunks),
-          "To mark this as checked, use the stamp:",
-          out (newStamp check) <> hardline
+          vsep (out <$> hunks)
         ]
 
 instance Out [Reminder] where
