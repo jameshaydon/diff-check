@@ -162,33 +162,36 @@ iMode :: Text -> Reminder -> IO ()
 iMode stampMark r@Reminder {..} = do
   outAnsi r
   say "\nMark as checked? This will add the stamp above. [y/n]"
-  IO.hSetBuffering stdin IO.NoBuffering
-  cmd <- getChar
-  case cmd of
-    'y' -> do
+  loop
+  where
+    loop = do
+      IO.hSetBuffering stdin IO.NoBuffering
+      cmd <- getChar
       IO.hSetBuffering stdin IO.LineBuffering
-      let Check {..} = check
-      t <- readFile source
-      let (beforeStamp, oldPlusRest) = T.splitAt stampStart t
-          rest = T.drop (stampEnd - stampStart) oldPlusRest
-          t' = beforeStamp <> formatStamp stampMark prefix newStamp <> "\n" <> rest
-      modTime' <- getModificationTime source
-      if modTime == modTime'
-        then do
-          writeFile source t'
-          say "\nWrote stamp."
-        else say "\nFile was modified, aborting."
-    'n' -> IO.hSetBuffering stdin IO.LineBuffering >> say "\nDid nothing."
-    _ -> IO.hSetBuffering stdin IO.LineBuffering >> say "\nUnrecognised command."
+      case cmd of
+        'y' -> do
+          let Check {..} = check
+          t <- readFile source
+          let (beforeStamp, oldPlusRest) = T.splitAt stampStart t
+              rest = T.drop (stampEnd - stampStart) oldPlusRest
+              t' = beforeStamp <> formatStamp stampMark prefix newStamp <> "\n" <> rest
+          modTime' <- getModificationTime source
+          if modTime == modTime'
+            then do
+              writeFile source t'
+              say "\nUpdated stamp."
+            else say "\nFile was modified, aborting."
+        'n' -> pure ()
+        _ -> say "\nPlease type 'y' (yes) of 'n' (no):" >> loop
 
 -- CAREFUL: just for testing
 -- This is a line:
 --   - This is an item;
 --   - This is another.
--- CHECKPOINT: James Henri Haydon CHECKED just for testing (zVmSlHeN)
+-- CHECKPOINT: James Henri Haydon CHECKED just for testing (A8MFn4Wp)
 exe :: Config -> IO ()
 exe Config {..} = do
-  say "diffcheck: looking for unstamped checks..."
+  say "diffcheck: looking for unstamped checks.."
   name <- gitUsername
   gd <- gitDiff [diffAgainst, "--unified=0", "--minimal"]
   if T.null gd
@@ -205,6 +208,6 @@ exe Config {..} = do
                   exitSuccess
                 Right (concat -> rs) ->
                   if interactive
-                    then traverse_ (iMode stampMarker) rs
+                    then traverse_ (iMode stampMarker) rs >> say "\nAll done."
                     else outAnsi rs >> exitFailure
             Left e -> putStrLn e >> exitFailure

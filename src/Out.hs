@@ -11,11 +11,6 @@ import Types
 class Out a where
   out :: a -> Doc AnsiStyle
 
--- instance Out Stamp where
---   out Stamp {..} =
---     annotate italicized $
---       "STAMP" <> ":" <+> pretty username <+> "CHECKED" <+> pretty short <+> parens (pretty hash)
-
 instance Out Check where
   out Check {..} =
     vsep $ [ch <+> tit] <> desc
