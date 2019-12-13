@@ -188,7 +188,7 @@ iMode stampMark r@Reminder {..} = do
 -- This is a line:
 --   - This is an item;
 --   - This is another.
--- CHECKPOINT: James Henri Haydon CHECKED just for testing (A8MFn4Wp)
+-- CHECKPOINT: James Henri Haydon CHECKED just for testing (00pxTFJG)
 exe :: Config -> IO ()
 exe Config {..} = do
   say "diffcheck: looking for unstamped checks.."

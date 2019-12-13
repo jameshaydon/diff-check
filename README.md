@@ -32,8 +32,7 @@ invoked, one gets output like this (but with more colours):
 $ diffcheck
 
 path/to/file.ext
-CHECK: short description
-
+CHECK: short description (A8MFn4Wp ➜ 00pxTFJG)
   Longer description here.
   Possibly over several lines.
 
@@ -42,19 +41,17 @@ The region of this check is affected by the following hunks:
   L66
   -        foo :: Foo,
   +        bar :: Bar,
-
-To mark this as checked, use the stamp:
-STAMP: James Henri Haydon CHECKED short description (MovKghFl)
 ```
 
-To mark the check as done the stamp must be updated. This can be done by using
-the interactive mode:
+To mark a check as done, use the interactive mode which displays each check in
+turn and offers to update the stamp:
 
 ```
 diffcheck -i
 ```
 
-To perform the check against a branch other than master, use:
+To perform the diff against a branch other than the default (`origin/master`),
+use:
 
 ```
 diffcheck --diff-against origin/develop

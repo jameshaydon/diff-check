@@ -12,29 +12,28 @@ class Out a where
   out :: a -> Doc AnsiStyle
 
 instance Out Check where
-  out Check {..} =
-    vsep $ [ch <+> tit] <> desc
+  out Check {..} = vsep (ch <+> tit : desc)
     where
-      ch = annotate (color Blue <> underlined) "CHECK" <> ":"
-      tit = annotate bold (pretty short) <+> parens hashChange
-      hashChange = oldHash <> " → " <> newHash
-      newHash = annotate (color Green) (pretty (regionHash region))
+      ch = annotate (color Blue <> underlined <> bold) "CHECK" <> ":"
+      tit = annotate bold (pretty short) <+> parens (oldHash <> " ➜ " <> newHash)
+      newHash = paint Green (pretty (regionHash region))
       oldHash = case oldStamp of
         Nothing -> mempty
-        Just Stamp {..} -> annotate (color Red) (pretty hash)
+        Just s -> paint Red (pretty (hash s))
       desc = case long of
         [] -> []
         _ -> [indent 2 $ annotate italicized (vsep (pretty <$> long))]
 
 instance Out Line where
   out Line {..} = case lineAnnotation of
-    Added -> annotate (color Green) $ "+" <> pretty lineContent
-    Removed -> annotate (color Red) $ "-" <> pretty lineContent
-    Context -> " " <> pretty lineContent
+    Added -> paint Green ("+" <> c)
+    Removed -> paint Red ("-" <> c)
+    Context -> " " <> c
+    where
+      c = pretty lineContent
 
 instance Out Hunk where
-  out Hunk {..} =
-    indent 2 (vsep diffs) <> hardline
+  out Hunk {..} = indent 2 (vsep diffs) <> hardline
     where
       diffs = "L" <> pretty (rangeStartingLineNumber hunkDestRange) : (out <$> hunkLines)
 
@@ -61,3 +60,6 @@ outAnsi x = do
   let docStream = layoutSmart defaultLayoutOptions $ out x
       rdr = if hasColours then Term.renderStrict else Text.renderStrict
   putStr (rdr docStream)
+
+paint :: Color -> Doc AnsiStyle -> Doc AnsiStyle
+paint c = annotate (color c)
