@@ -160,7 +160,7 @@ formatStamp stampMark prfx Stamp {..} =
 
 iMode :: Text -> Reminder -> IO ()
 iMode stampMark r@Reminder {..} = do
-  outAnsi r
+  disp r
   say "\nMark as checked? This will add the stamp above. [y/n]"
   loop
   where
@@ -191,7 +191,7 @@ iMode stampMark r@Reminder {..} = do
 -- CHECKPOINT: James Henri Haydon CHECKED just for testing (00pxTFJG)
 exe :: Config -> IO ()
 exe Config {..} = do
-  say "diffcheck: looking for unstamped checks.."
+  say "diffcheck: looking for unstamped checks..."
   name <- gitUsername
   gd <- gitDiff [diffAgainst, "--unified=0", "--minimal"]
   if T.null gd
@@ -209,5 +209,5 @@ exe Config {..} = do
                 Right (concat -> rs) ->
                   if interactive
                     then traverse_ (iMode stampMarker) rs >> say "\nAll done."
-                    else outAnsi rs >> exitFailure
+                    else disp rs >> exitFailure
             Left e -> putStrLn e >> exitFailure

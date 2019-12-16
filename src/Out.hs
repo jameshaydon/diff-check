@@ -3,8 +3,10 @@ module Out where
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal as Term
 import Data.Text.Prettyprint.Doc.Render.Text as Text
+import Data.Text.Prettyprint.Doc.Util
 import Protolude hiding (check, hash)
 import qualified System.Console.ANSI as Term
+import qualified System.Console.Terminal.Size as Term
 import Text.Diff.Parse.Types
 import Types
 
@@ -12,10 +14,14 @@ class Out a where
   out :: a -> Doc AnsiStyle
 
 instance Out Check where
-  out Check {..} = vsep (ch <+> tit : desc)
+  out Check {..} = vsep (top : desc)
     where
-      ch = annotate (color Blue <> underlined <> bold) "CHECK" <> ":"
-      tit = annotate bold (pretty short) <+> parens (oldHash <> " ➜ " <> newHash)
+      top =
+        sep
+          [ annotate (color Blue <> underlined <> bold) "CHECK" <> ":",
+            annotate bold (pretty short),
+            parens (oldHash <> " ➜ " <> newHash)
+          ]
       newHash = paint Green (pretty (regionHash region))
       oldHash = case oldStamp of
         Nothing -> mempty
@@ -44,7 +50,7 @@ instance Out Reminder where
         [ pretty source,
           out check,
           mempty,
-          "The region of this check is affected by the following hunks:",
+          reflow "The region of this check is affected by the following hunks:",
           mempty,
           vsep (out <$> hunks)
         ]
@@ -54,11 +60,14 @@ instance Out [Reminder] where
     [] -> mempty
     rs -> vsep (out <$> rs)
 
-outAnsi :: Out a => a -> IO ()
-outAnsi x = do
-  hasColours <- Term.hSupportsANSI stdout
-  let docStream = layoutSmart defaultLayoutOptions $ out x
-      rdr = if hasColours then Term.renderStrict else Text.renderStrict
+disp :: Out a => a -> IO ()
+disp x = do
+  hasAnsi <- Term.hSupportsANSI stdout
+  w_ <- Term.size
+  let width = fromMaybe 80 (Term.width <$> w_)
+      opts = LayoutOptions {layoutPageWidth = AvailablePerLine width 1.0}
+      docStream = layoutSmart opts (out x)
+      rdr = if hasAnsi then Term.renderStrict else Text.renderStrict
   putStr (rdr docStream)
 
 paint :: Color -> Doc AnsiStyle -> Doc AnsiStyle

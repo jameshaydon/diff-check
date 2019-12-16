@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: faba3de70d2b3f83a5e3ef21fd7f99d42e96ec08035409c29cd2a5e582c0165c
+-- hash: 2e9efe86425e2a6980b37fad5c30fa14c1522a53ea3c4bc835b9d7e1c5689be9
 
 name:           diff-check
 version:        0.1.0.0
@@ -52,6 +52,7 @@ library
     , prettyprinter-ansi-terminal
     , process
     , protolude
+    , terminal-size
     , text
     , time
   default-language: Haskell2010
@@ -80,6 +81,7 @@ executable diffcheck
     , prettyprinter-ansi-terminal
     , process
     , protolude
+    , terminal-size
     , text
     , time
   default-language: Haskell2010
@@ -109,6 +111,7 @@ test-suite diff-reminder-test
     , prettyprinter-ansi-terminal
     , process
     , protolude
+    , terminal-size
     , text
     , time
   default-language: Haskell2010
