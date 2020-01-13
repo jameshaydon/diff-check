@@ -78,11 +78,12 @@ regionP = do
   start <- getSourcePos
   ls <- many nonEmptyLineP
   end <- getSourcePos
-  pure Region
-    { range = (unPos (sourceLine start), unPos (sourceLine end) - 1),
-      content = ls,
-      regionHash = hashContent ls
-    }
+  pure
+    Region
+      { range = (unPos (sourceLine start), unPos (sourceLine end) - 1),
+        content = ls,
+        regionHash = hashContent ls
+      }
   where
     nonEmptyLineP = T.cons <$> nonNewlineP <*> lineP
 
@@ -139,17 +140,19 @@ intervalIntersect (a, b) (a', b') =
     y = min b b'
 
 delta :: Text -> Text -> Text -> FileDelta -> IO (Either Text [Reminder])
-delta checkMark stampMark name FileDelta {..} = case fileDeltaContent of
-  Hunks hs -> do
-    let fp = toS fileDeltaDestFile
-    modTime <- getModificationTime fp
-    t <- readFile fp
-    case parse (checksP checkMark stampMark name) fp t of
-      Left err -> pure . Left . toS . errorBundlePretty $ err
-      Right cs -> do
-        let xs = clashes cs hs
-        pure . Right $ uncurry (Reminder fp modTime) <$> xs
-  _ -> pure . Right $ []
+delta checkMark stampMark name FileDelta {..} = case fileDeltaStatus of
+  Deleted -> pure (Right [])
+  _ -> case fileDeltaContent of
+    Hunks hs -> do
+      let fp = toS fileDeltaDestFile
+      modTime <- getModificationTime fp
+      t <- readFile fp
+      case parse (checksP checkMark stampMark name) fp t of
+        Left err -> pure . Left . toS . errorBundlePretty $ err
+        Right cs -> do
+          let xs = clashes cs hs
+          pure . Right $ uncurry (Reminder fp modTime) <$> xs
+    _ -> pure . Right $ []
 
 say :: Text -> IO ()
 say = putStrLn
