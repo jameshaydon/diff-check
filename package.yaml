@@ -1,4 +1,4 @@
-name:                diff-check
+name:                diffcheck
 version:             0.1.0.0
 github:              "jameshaydon/diff-check"
 license:             BSD3
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/diff-reminder#readme>
+description:         Please see the README on GitHub at <https://github.com/jameshaydon/diff-check#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -26,7 +26,6 @@ dependencies:
 - process
 - cryptonite
 - memory
-- diff-parse
 - bytestring
 - parser-combinators
 - megaparsec
@@ -50,7 +49,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - diff-check
+    - diffcheck
 
 tests:
   diff-reminder-test:
@@ -61,7 +60,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - diff-reminder
+    - diffcheck
 
 default-extensions:
 - ConstraintKinds

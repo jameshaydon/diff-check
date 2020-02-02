@@ -20,7 +20,7 @@ config =
           <> metavar "BRANCH"
           <> help "Which branch to diff against"
           <> showDefault
-          <> value "master"
+          <> value "origin/master"
       )
     <*> strOption
       ( long "check-marker"

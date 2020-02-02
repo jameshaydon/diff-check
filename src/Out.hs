@@ -4,10 +4,10 @@ import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal as Term
 import Data.Text.Prettyprint.Doc.Render.Text as Text
 import Data.Text.Prettyprint.Doc.Util
+import DiffTypes
 import Protolude hiding (check, hash)
 import qualified System.Console.ANSI as Term
 import qualified System.Console.Terminal.Size as Term
-import Text.Diff.Parse.Types
 import Types
 
 class Out a where
@@ -64,8 +64,8 @@ disp :: Out a => a -> IO ()
 disp x = do
   hasAnsi <- Term.hSupportsANSI stdout
   w_ <- Term.size
-  let width = fromMaybe 80 (Term.width <$> w_)
-      opts = LayoutOptions {layoutPageWidth = AvailablePerLine width 1.0}
+  let wid = maybe 80 Term.width w_
+      opts = LayoutOptions {layoutPageWidth = AvailablePerLine wid 1.0}
       docStream = layoutSmart opts (out x)
       rdr = if hasAnsi then Term.renderStrict else Text.renderStrict
   putStr (rdr docStream)

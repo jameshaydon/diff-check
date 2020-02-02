@@ -4,11 +4,11 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2e9efe86425e2a6980b37fad5c30fa14c1522a53ea3c4bc835b9d7e1c5689be9
+-- hash: f3bbfe36739542244963ef27b45d11378d8a187926223e93a74ce7a09e5b0aa9
 
-name:           diff-check
+name:           diffcheck
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/diff-reminder#readme>
+description:    Please see the README on GitHub at <https://github.com/jameshaydon/diff-check#readme>
 homepage:       https://github.com/jameshaydon/diff-check#readme
 bug-reports:    https://github.com/jameshaydon/diff-check/issues
 author:         James Henri Haydon
@@ -28,12 +28,15 @@ source-repository head
 library
   exposed-modules:
       Config
+      DiffParse
+      DiffTypes
       Hash
       Lib
       Out
+      Parse.Common
       Types
   other-modules:
-      Paths_diff_check
+      Paths_diffcheck
   hs-source-dirs:
       src
   default-extensions: ConstraintKinds DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving StrictData TupleSections TypeApplications TypeOperators ViewPatterns TypeFamilies
@@ -42,7 +45,6 @@ library
     , base >=4.7 && <5
     , bytestring
     , cryptonite
-    , diff-parse
     , directory
     , megaparsec
     , memory
@@ -60,7 +62,7 @@ library
 executable diffcheck
   main-is: Main.hs
   other-modules:
-      Paths_diff_check
+      Paths_diffcheck
   hs-source-dirs:
       app
   default-extensions: ConstraintKinds DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving StrictData TupleSections TypeApplications TypeOperators ViewPatterns TypeFamilies
@@ -70,8 +72,7 @@ executable diffcheck
     , base >=4.7 && <5
     , bytestring
     , cryptonite
-    , diff-check
-    , diff-parse
+    , diffcheck
     , directory
     , megaparsec
     , memory
@@ -90,7 +91,7 @@ test-suite diff-reminder-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_diff_check
+      Paths_diffcheck
   hs-source-dirs:
       test
   default-extensions: ConstraintKinds DataKinds DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies DerivingVia DuplicateRecordFields EmptyCase FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving StrictData TupleSections TypeApplications TypeOperators ViewPatterns TypeFamilies
@@ -100,8 +101,7 @@ test-suite diff-reminder-test
     , base >=4.7 && <5
     , bytestring
     , cryptonite
-    , diff-parse
-    , diff-reminder
+    , diffcheck
     , directory
     , megaparsec
     , memory

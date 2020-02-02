@@ -1,8 +1,8 @@
 module Types where
 
 import Data.Time
+import DiffTypes
 import Protolude
-import Text.Diff.Parse.Types
 
 data Region
   = Region

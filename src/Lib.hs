@@ -3,37 +3,31 @@ module Lib (exe) where
 import Config
 import Control.Monad.Combinators
 import qualified Data.Text as T
+import DiffParse
+import DiffTypes
 import Hash
 import Out
+import Parse.Common
 import Protolude hiding (check, hash, many, some, sourceLine, try)
 import System.Directory
 import qualified System.IO as IO
 import System.Process (readProcess)
-import Text.Diff.Parse (parseDiff)
-import Text.Diff.Parse.Types
 import Text.Megaparsec hiding (region)
 import Text.Megaparsec.Char
 import Types
 import Prelude (getChar)
 
-type Parser = Parsec Void Text
+nonEolP :: Parser Char
+nonEolP = anySingleBut '\n'
 
 checksP :: Text -> Text -> Text -> Parser [Check]
-checksP checkMark stampMark un =
-  catMaybes
-    <$> many (Just <$> checkP checkMark stampMark un <|> Nothing <$ nonCheckLine)
+checksP checkMark stampMark un = do
+  xs <- many (Just <$> checkP checkMark stampMark un <|> Nothing <$ nonCheckLine)
+  _ <- lastLine
+  pure (catMaybes xs)
   where
-    nonCheckLine = takeWhileP (Just "non-check line char") nonNewline >> newline >> pure () <|> eof
-
-nonNewline :: Char -> Bool
-nonNewline = (/= '\n')
-
-nonNewlineP :: Parser Char
-nonNewlineP = anySingleBut '\n'
-
--- Parses a newline-terminated line of text.
-lineP :: Parser Text
-lineP = takeWhileP (Just "non-newline char") nonNewline <* newline
+    nonCheckLine = try $ takeWhileP (Just "non-check line char") nonEol >> eol
+    lastLine = takeWhileP (Just "last line char") nonEol >> eof
 
 -- | Parses a check.
 checkP :: Text -> Text -> Text -> Parser Check
@@ -42,7 +36,7 @@ checkP checkMark stampMark username = do
   -- commits to parsing a CHECK.
   prefix <- try (prefixP checkMark <?> "prefix")
   space
-  short <- takeWhileP (Just "short description") nonNewline <?> "title"
+  short <- takeWhileP (Just "short description") nonEol <?> "title"
   _ <- newline
   long <- longP stampMark prefix <?> "description"
   stampStart <- getOffset
@@ -53,7 +47,7 @@ checkP checkMark stampMark username = do
 
 -- | Parses a prefix before a check.
 prefixP :: Text -> Parser Text
-prefixP checkMark = toS <$> manyTill (nonNewlineP <?> "comment prefix") (chunk checkMark)
+prefixP checkMark = toS <$> manyTill (nonEolP <?> "comment prefix") (chunk checkMark)
 
 -- | The long description is all lines that start with the prefix and are before
 -- an optional stamp.
@@ -66,8 +60,8 @@ stampP :: Text -> Text -> Parser Stamp
 stampP stampMark prfx = do
   _ <- chunk (prfx <> stampMark)
   space
-  username <- toS <$> manyTill (nonNewlineP <?> "username char") (chunk " CHECKED ")
-  (short, hash) <- first toS <$> manyTill_ (nonNewlineP <?> "short description") (hashP <?> "hash")
+  username <- toS <$> manyTill (nonEolP <?> "username char") (chunk " CHECKED ")
+  (short, hash) <- first toS <$> manyTill_ (nonEolP <?> "short description") (hashP <?> "hash")
   _ <- newline
   pure Stamp {..}
   where
@@ -85,7 +79,7 @@ regionP = do
         regionHash = hashContent ls
       }
   where
-    nonEmptyLineP = T.cons <$> nonNewlineP <*> lineP
+    nonEmptyLineP = T.cons <$> nonEolP <*> lineP
 
 hashContent :: [Text] -> Text
 hashContent = sha256_8 . T.intercalate "\n"
@@ -115,8 +109,6 @@ clashes (c : cs) hs = if include then (c, is) : next else next
     (is, rest) = spanMaybe intersect (dropWhile before hs)
     before h = snd (hunkRange h) < fst (checkRange c)
     intersect h = h <$ intervalIntersect (hunkRange h) (checkRange c)
-
--- (,h) <$> intervalIntersect (hunkRange h) (checkRange c)
 
 validStamp :: Check -> Bool
 validStamp Check {region = Region {regionHash = h}, oldStamp} = case oldStamp of
@@ -152,7 +144,7 @@ delta checkMark stampMark name FileDelta {..} = case fileDeltaStatus of
         Right cs -> do
           let xs = clashes cs hs
           pure . Right $ uncurry (Reminder fp modTime) <$> xs
-    _ -> pure . Right $ []
+    _ -> pure (Right [])
 
 say :: Text -> IO ()
 say = putStrLn
@@ -199,18 +191,21 @@ exe Config {..} = do
   gd <- gitDiff [diffAgainst, "--unified=0", "--minimal"]
   if T.null gd
     then pure ()
-    else
-      let d = parseDiff gd
-       in case d of
-            Right ds -> do
-              rs_ <- sequence <$> traverse (delta checkMarker stampMarker name) ds
-              case rs_ of
-                Left err -> putStrLn err >> exitFailure
-                Right (concat -> []) -> do
-                  say "All clear."
-                  exitSuccess
-                Right (concat -> rs) ->
-                  if interactive
-                    then traverse_ (iMode stampMarker) rs >> say "\nAll done."
-                    else disp rs >> exitFailure
-            Left e -> putStrLn e >> exitFailure
+    else do
+      let d = parse diffP "diff" gd
+      case d of
+        Right ds -> do
+          rs_ <- sequence <$> traverse (delta checkMarker stampMarker name) ds
+          case rs_ of
+            Left err -> putStrLn err >> exitFailure
+            Right (concat -> []) -> do
+              say "All clear."
+              exitSuccess
+            Right (concat -> rs) ->
+              if interactive
+                then traverse_ (iMode stampMarker) rs >> say "\nAll done."
+                else disp rs >> exitFailure
+        Left e -> do
+          say "There was an error parsing the diff:"
+          say (toS (errorBundlePretty e))
+          exitFailure
