@@ -20,7 +20,6 @@ First add a CHECK to some function in your code. E.g.:
 -- Longer description follows,
 --   - and can be,
 --   - over several lines.
--- STAMP: James Henri Haydon CHECKED short description (AMJA4QEe)
 f :: Int -> Int -> Int
 f x y = x + y
 ```
@@ -44,10 +43,22 @@ The region of this check is affected by the following hunks:
 ```
 
 To mark a check as done, use the interactive mode which displays each check in
-turn and offers to update the stamp:
+turn and offers to add/update the stamp:
 
 ```
 diffcheck -i
+```
+
+The check will now have a stamp, like this:
+
+``` haskell
+-- CHECK: short description
+-- Longer description follows,
+--   - and can be,
+--   - over several lines.
+-- STAMP: James Henri Haydon CHECKED short description (AMJA4QEe)
+f :: Int -> Int -> Int
+f x y = x + y
 ```
 
 To perform the diff against a branch other than the default (`origin/master`),
