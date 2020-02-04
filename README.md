@@ -5,7 +5,8 @@ code get updated.
 
 ## Installation
 
-Install [stack](https://docs.haskellstack.org/en/stable/README/#how-to-install) and then:
+Install [stack](https://docs.haskellstack.org/en/stable/README/#how-to-install)
+and then:
 
 ```
 stack install
@@ -13,8 +14,17 @@ stack install
 
 ## Usage
 
-First add a CHECK to some function in your code. E.g.:
+Changing one part of a codebase might often require corresponding changes to
+other parts. To be reminded of this you add a `CHECK` to the part of the code
+that triggers other required changes.
 
+E.g. if you want changes to `f` to trigger a reminder:
+``` haskell
+f :: Int -> Int -> Int
+f x y = x + y
+```
+
+You add a check like this:
 ``` haskell
 -- CHECK: short description
 -- Longer description follows,
